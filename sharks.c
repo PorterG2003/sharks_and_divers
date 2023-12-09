@@ -40,26 +40,16 @@ bool *sharks_feeding;
 // declare synchronization variables here
 //
 
-// create a semaphore
-sem_t mutex;
-int s = sem_init(&mutex, 0, 1);
-assert(s == 0);
+// Declare semaphores
+sem_t mutex, reef, turnstile, Q_s, Q_d;
 
-sem_t reef;
-int s = sem_init(&reef, 0, 1);
-assert(s == 0);
-
-sem_t turnstile;
-int s = sem_init(&turnstile, 0, 1);
-assert(s == 0);
-
-sem_t Q_s;
-int s = sem_init(&Q_s, 0, 1);
-assert(s == 0);
-
-sem_t Q_d;
-int s = sem_init(&Q_d, 0, 1);
-assert(s == 0);
+void initialize_semaphores(void) {
+    assert(sem_init(&mutex, 0, 1) == 0);
+    assert(sem_init(&reef, 0, 1) == 0);
+    assert(sem_init(&turnstile, 0, 1) == 0);
+    assert(sem_init(&Q_s, 0, 1) == 0);
+    assert(sem_init(&Q_d, 0, 1) == 0);
+}
 
 int divers = 0;
 int sharks = 0;
@@ -272,6 +262,7 @@ int main(void) {
     // initialize synchronization variables here
     //
 
+    initialize_semaphores();
 
     //
     // end of synchronization variable initialization
