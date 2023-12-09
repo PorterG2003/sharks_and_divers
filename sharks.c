@@ -9,6 +9,7 @@
 #include <time.h>
 #include <string.h>
 
+
 // total number of sharks and divers
 const int SHARK_COUNT = 6;
 const int DIVER_COUNT = 2;
@@ -38,6 +39,30 @@ bool *sharks_feeding;
 //
 // declare synchronization variables here
 //
+
+// create a semaphore
+sem_t mutex;
+int s = sem_init(&mutex, 0, 1);
+assert(s == 0);
+
+sem_t reef;
+int s = sem_init(&reef, 0, 1);
+assert(s == 0);
+
+sem_t turnstile;
+int s = sem_init(&turnstile, 0, 1);
+assert(s == 0);
+
+sem_t Q_s;
+int s = sem_init(&Q_s, 0, 1);
+assert(s == 0);
+
+sem_t Q_d;
+int s = sem_init(&Q_d, 0, 1);
+assert(s == 0);
+
+int divers = 0;
+int sharks = 0;
 
 
 //
@@ -106,6 +131,29 @@ void *shark(void *arg) {
         // note: call report() after setting sharks_feeding[k] to true
         //
 
+        s = sem_wait(&Q_s);
+        assert(s == 0);
+        s = sem_wait(&turnstile);
+        assert(s == 0);
+        s = sem_wait(&mutex);
+        assert(s == 0);
+
+        sharks++;
+        s = sem_post(&Q_s);
+        assert(s == 0);
+        
+        if (sharks == 1) {
+            s = sem_wait(&reef);
+            assert(s == 0);
+        } else if (sharks > 1) {
+            s = sem_wait(&Q_s);
+            assert(s == 0);
+        }
+
+        s = sem_post(&mutex);
+        assert(s == 0);
+        s = sem_post(&turnstile);
+        assert(s == 0);
 
         //
         // end code to start shark feeding
@@ -118,6 +166,22 @@ void *shark(void *arg) {
         // write code here to stop the shark feeding
         // note: call report() after setting sharks_feeding[k] to false
         //
+
+        s = sem_wait(&mutex);
+        assert(s == 0);
+        
+        sharks--;
+
+        if (sharks == 0) {
+            s = sem_post(&reef);
+            assert(s == 0);
+        } else if (sharks > 0) {
+            s = sem_post(&Q_s);
+            assert(s == 0);
+        }
+
+        s = sem_post(&mutex);
+        assert(s == 0);
 
 
         //
@@ -143,6 +207,29 @@ void *diver(void *arg) {
         // note: call report() after setting divers_fishing[k] to true
         //
 
+        s = sem_wait(&Q_d);
+        assert(s == 0);
+        s = sem_wait(&turnstile);
+        assert(s == 0);
+        s = sem_wait(&mutex);
+        assert(s == 0);
+
+        divers++;
+        s = sem_post(&Q_d);
+        assert(s == 0);
+        
+        if (divers == 1) {
+            s = sem_wait(&reef);
+            assert(s == 0);
+        } else if (divers == 2) {
+            s = sem_wait(&Q_d);
+            assert(s == 0);
+        }
+
+        s = sem_post(&mutex);
+        assert(s == 0);
+        s = sem_post(&turnstile);
+        assert(s == 0);
 
         //
         // end code to start diver fishing
@@ -156,6 +243,21 @@ void *diver(void *arg) {
         // note: call report() after setting divers_fishing[k] to false
         //
 
+        s = sem_wait(&mutex);
+        assert(s == 0);
+        
+        divers--;
+
+        if (divers == 0) {
+            s = sem_post(&reef);
+            assert(s == 0);
+        } else if (divers == 1) {
+            s = sem_post(&Q_d);
+            assert(s == 0);
+        }
+
+        s = sem_post(&mutex);
+        assert(s == 0);
 
         //
         // end code to stop diver fishing
