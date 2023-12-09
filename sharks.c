@@ -41,18 +41,28 @@ bool *sharks_feeding;
 //
 
 // Declare semaphores
-sem_t mutex, reef, turnstile, Q_s, Q_d;
+sem_t *mutex, *reef, *turnstile, *Q_s, *Q_d;
 
 void initialize_semaphores(void) {
-    assert(sem_init(&mutex, 0, 1) == 0);
-    assert(sem_init(&reef, 0, 1) == 0);
-    assert(sem_init(&turnstile, 0, 1) == 0);
-    assert(sem_init(&Q_s, 0, 1) == 0);
-    assert(sem_init(&Q_d, 0, 1) == 0);
+    mutex = sem_open("/mutex_sem", O_CREAT, 0644, 1);
+    assert(mutex != SEM_FAILED);
+    
+    reef = sem_open("/reef_sem", O_CREAT, 0644, 1);
+    assert(reef != SEM_FAILED);
+    
+    turnstile = sem_open("/turnstile_sem", O_CREAT, 0644, 1);
+    assert(turnstile != SEM_FAILED);
+    
+    Q_s = sem_open("/Q_s_sem", O_CREAT, 0644, 1);
+    assert(Q_s != SEM_FAILED);
+    
+    Q_d = sem_open("/Q_d_sem", O_CREAT, 0644, 1);
+    assert(Q_d != SEM_FAILED);
 }
 
 int divers = 0;
 int sharks = 0;
+int s;
 
 
 //
@@ -121,56 +131,62 @@ void *shark(void *arg) {
         // note: call report() after setting sharks_feeding[k] to true
         //
 
-        s = sem_wait(&Q_s);
+        s = sem_wait(Q_s);
         assert(s == 0);
-        s = sem_wait(&turnstile);
+        s = sem_wait(turnstile);
         assert(s == 0);
-        s = sem_wait(&mutex);
+        s = sem_wait(mutex);
         assert(s == 0);
 
         sharks++;
-        s = sem_post(&Q_s);
+        s = sem_post(Q_s);
         assert(s == 0);
         
         if (sharks == 1) {
-            s = sem_wait(&reef);
+            s = sem_wait(reef);
             assert(s == 0);
         } else if (sharks > 1) {
-            s = sem_wait(&Q_s);
+            s = sem_wait(Q_s);
             assert(s == 0);
         }
 
-        s = sem_post(&mutex);
+        s = sem_post(mutex);
         assert(s == 0);
-        s = sem_post(&turnstile);
+        s = sem_post(turnstile);
         assert(s == 0);
 
         //
         // end code to start shark feeding
         //
 
+        sharks_feeding[k] = true;
+        report();
+
         // feed for a while
         usleep(random() % SHARK_FISHING_TIME);
+
+        sharks_feeding[k] = false;
+        report();
 
         //
         // write code here to stop the shark feeding
         // note: call report() after setting sharks_feeding[k] to false
         //
 
-        s = sem_wait(&mutex);
+        s = sem_wait(mutex);
         assert(s == 0);
         
         sharks--;
 
         if (sharks == 0) {
-            s = sem_post(&reef);
+            s = sem_post(reef);
             assert(s == 0);
         } else if (sharks > 0) {
-            s = sem_post(&Q_s);
+            s = sem_post(Q_s);
             assert(s == 0);
         }
 
-        s = sem_post(&mutex);
+        s = sem_post(mutex);
         assert(s == 0);
 
 
@@ -197,56 +213,62 @@ void *diver(void *arg) {
         // note: call report() after setting divers_fishing[k] to true
         //
 
-        s = sem_wait(&Q_d);
+        s = sem_wait(Q_d);
         assert(s == 0);
-        s = sem_wait(&turnstile);
+        s = sem_wait(turnstile);
         assert(s == 0);
-        s = sem_wait(&mutex);
+        s = sem_wait(mutex);
         assert(s == 0);
 
         divers++;
-        s = sem_post(&Q_d);
+        s = sem_post(Q_d);
         assert(s == 0);
         
         if (divers == 1) {
-            s = sem_wait(&reef);
+            s = sem_wait(reef);
             assert(s == 0);
         } else if (divers == 2) {
-            s = sem_wait(&Q_d);
+            s = sem_wait(Q_d);
             assert(s == 0);
         }
 
-        s = sem_post(&mutex);
+        s = sem_post(mutex);
         assert(s == 0);
-        s = sem_post(&turnstile);
+        s = sem_post(turnstile);
         assert(s == 0);
 
         //
         // end code to start diver fishing
         //
 
+        divers_fishing[k] = true;
+        report();
+
         // fish for a while
         usleep(random() % DIVER_FISHING_TIME);
+
+        divers_fishing[k] = false;
+        report();
 
         //
         // write code here to stop the diver feeding
         // note: call report() after setting divers_fishing[k] to false
         //
 
-        s = sem_wait(&mutex);
+        s = sem_wait(mutex);
         assert(s == 0);
         
         divers--;
 
         if (divers == 0) {
-            s = sem_post(&reef);
+            s = sem_post(reef);
             assert(s == 0);
         } else if (divers == 1) {
-            s = sem_post(&Q_d);
+            s = sem_post(Q_d);
             assert(s == 0);
         }
 
-        s = sem_post(&mutex);
+        s = sem_post(mutex);
         assert(s == 0);
 
         //
